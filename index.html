@@ -126,6 +126,10 @@
       grid-template-columns: repeat(5, 1fr);
       gap: 10px;
     }
+    button {
+      font-family: inherit;
+      letter-spacing: 0;
+    }
     .step, .platform {
       border: 1px solid var(--line);
       border-radius: 10px;
@@ -133,10 +137,18 @@
       padding: 16px;
       font-weight: 800;
       font-size: 22px;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color .15s ease, background .15s ease, transform .15s ease;
     }
     .step.active, .platform.active {
       border-color: var(--blue);
       background: var(--blue-soft);
+    }
+    .step:hover, .platform:hover {
+      transform: translateY(-1px);
+      border-color: var(--blue);
     }
     .platforms {
       display: grid;
@@ -153,6 +165,51 @@
       display: grid;
       align-content: start;
       gap: 18px;
+    }
+    .preview-title {
+      font-size: 32px;
+      line-height: 1.18;
+      font-weight: 900;
+    }
+    .preview-copy {
+      color: var(--muted);
+      font-size: 24px;
+    }
+    .draft-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 20px;
+      background: #f8fbff;
+    }
+    .draft-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #074f99;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .action-button {
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 22px;
+      font-weight: 900;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .action-button.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+    .action-button:disabled {
+      cursor: not-allowed;
+      opacity: .48;
     }
     .bar {
       height: 22px;
@@ -225,24 +282,25 @@
       <div class="screen" aria-label="대시보드 미리보기">
         <div class="screen-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
         <div class="screen-body">
-          <div class="stepper">
-            <div class="step active">1 플랫폼</div>
-            <div class="step">2 주제</div>
-            <div class="step">3 확정</div>
-            <div class="step">4 원고</div>
-            <div class="step">5 최종</div>
+          <div class="stepper" aria-label="작업 단계">
+            <button class="step active" type="button" data-step="0">1 플랫폼</button>
+            <button class="step" type="button" data-step="1">2 주제</button>
+            <button class="step" type="button" data-step="2">3 확정</button>
+            <button class="step" type="button" data-step="3">4 원고</button>
+            <button class="step" type="button" data-step="4">5 최종</button>
           </div>
           <div class="platforms">
-            <div class="platform">LinkedIn</div>
-            <div class="platform active">Threads</div>
-            <div class="platform active">Naver</div>
-            <div class="platform active">Instagram</div>
+            <button class="platform" type="button" data-platform="LinkedIn">LinkedIn</button>
+            <button class="platform active" type="button" data-platform="Threads">Threads</button>
+            <button class="platform active" type="button" data-platform="Naver">Naver</button>
+            <button class="platform active" type="button" data-platform="Instagram">Instagram</button>
           </div>
-          <div class="content-preview">
-            <div class="bar"></div>
-            <div class="bar short"></div>
-            <div class="bar"></div>
-            <div class="bar short"></div>
+          <div class="content-preview" id="preview" aria-live="polite"></div>
+          <div class="actions">
+            <button class="action-button" id="prevButton" type="button">이전</button>
+            <button class="action-button primary" id="nextButton" type="button">다음</button>
+            <button class="action-button" id="sampleButton" type="button">샘플 생성</button>
+            <button class="action-button" id="resetButton" type="button">초기화</button>
           </div>
         </div>
       </div>
@@ -297,5 +355,126 @@
       </div>
     </section>
   </main>
+  <script>
+    const steps = [
+      {
+        title: "게시할 플랫폼을 고릅니다.",
+        copy: "선택한 플랫폼만 마지막 검토 단계에 남습니다. 카드를 누르면 켜고 끌 수 있습니다."
+      },
+      {
+        title: "영업 주제를 추천받습니다.",
+        copy: "예: 결산 전 감사 대응, 반복 대사 자동화, 감사 요청자료 표준화, CFO 보고 자동화."
+      },
+      {
+        title: "Claude안과 GPT안을 비교합니다.",
+        copy: "두 초안을 나란히 본 뒤 더 나은 방향을 선택하거나 직접 수정합니다."
+      },
+      {
+        title: "플랫폼별 원고로 바꿉니다.",
+        copy: "LinkedIn은 전문가 관점, Threads는 짧게, 네이버는 검색형 장문, Instagram은 캐러셀 중심으로 나눕니다."
+      },
+      {
+        title: "최종 검토 후 사람이 게시합니다.",
+        copy: "자동 게시 없이 원고와 이미지만 준비합니다. 연락처와 소개 문구는 마지막에 자동으로 붙습니다."
+      }
+    ];
+
+    const drafts = {
+      LinkedIn: "외부감사는 방문일부터 시작되지 않습니다. 결산 전 자료 체계가 갖춰져 있을 때 감사 대응 속도와 품질이 달라집니다.",
+      Threads: "감사 대응은 결산 후가 아니라 결산 전에 이미 갈립니다. 요청자료 표준화부터 점검해보세요.",
+      Naver: "결산 전 감사 대응 체계를 만들면 계정별 증빙, 담당자별 파일, 감사인 질의 대응을 반복해서 정리하는 시간을 줄일 수 있습니다.",
+      Instagram: "1장: 외부감사는 언제 시작될까요? / 2장: 결산 뒤 자료 찾기 / 3장: 표준화 / 4장: 자동화 / 5장: 문의"
+    };
+
+    const platforms = new Set(["Threads", "Naver", "Instagram"]);
+    let currentStep = 0;
+    let generated = false;
+
+    const preview = document.getElementById("preview");
+    const stepButtons = document.querySelectorAll(".step");
+    const platformButtons = document.querySelectorAll(".platform");
+    const prevButton = document.getElementById("prevButton");
+    const nextButton = document.getElementById("nextButton");
+    const sampleButton = document.getElementById("sampleButton");
+    const resetButton = document.getElementById("resetButton");
+
+    function renderPreview() {
+      const selected = Array.from(platforms);
+      const selectedText = selected.length ? selected.join(", ") : "선택 없음";
+      let body = `
+        <div class="preview-title">${steps[currentStep].title}</div>
+        <div class="preview-copy">${steps[currentStep].copy}</div>
+        <div class="draft-card"><strong>선택 플랫폼</strong>${selectedText}</div>
+      `;
+
+      if (generated || currentStep >= 3) {
+        body += selected.map((name) => `
+          <div class="draft-card">
+            <strong>${name}</strong>
+            ${drafts[name]}
+          </div>
+        `).join("");
+      }
+
+      preview.innerHTML = body;
+      prevButton.disabled = currentStep === 0;
+      nextButton.textContent = currentStep === steps.length - 1 ? "처음으로" : "다음";
+      stepButtons.forEach((button) => {
+        const active = Number(button.dataset.step) === currentStep;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-current", active ? "step" : "false");
+      });
+      platformButtons.forEach((button) => {
+        const active = platforms.has(button.dataset.platform);
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+    }
+
+    stepButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        currentStep = Number(button.dataset.step);
+        renderPreview();
+      });
+    });
+
+    platformButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const name = button.dataset.platform;
+        if (platforms.has(name)) {
+          platforms.delete(name);
+        } else {
+          platforms.add(name);
+        }
+        renderPreview();
+      });
+    });
+
+    prevButton.addEventListener("click", () => {
+      currentStep = Math.max(0, currentStep - 1);
+      renderPreview();
+    });
+
+    nextButton.addEventListener("click", () => {
+      currentStep = currentStep === steps.length - 1 ? 0 : currentStep + 1;
+      renderPreview();
+    });
+
+    sampleButton.addEventListener("click", () => {
+      generated = true;
+      currentStep = 3;
+      renderPreview();
+    });
+
+    resetButton.addEventListener("click", () => {
+      currentStep = 0;
+      generated = false;
+      platforms.clear();
+      ["Threads", "Naver", "Instagram"].forEach((name) => platforms.add(name));
+      renderPreview();
+    });
+
+    renderPreview();
+  </script>
 </body>
 </html>
