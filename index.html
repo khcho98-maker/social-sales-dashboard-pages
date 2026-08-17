@@ -456,6 +456,7 @@
     </main>
   </div>
 
+  <script src="preview-data.js"></script>
   <script>
     const platforms = ["linkedin", "threads", "naver", "instagram"];
     const platformLabels = { linkedin: "LinkedIn", threads: "Threads", naver: "네이버 블로그", instagram: "Instagram" };
@@ -476,6 +477,7 @@
     let saveTimer = null;
 
     const isStaticPreview = location.hostname.endsWith("github.io") || location.protocol === "file:";
+    const staticPreviewData = window.SOCIAL_SALES_PREVIEW_DATA || { drafts: [], runs: [], synced_at: "" };
 
     async function api(path, options = {}) {
       if (isStaticPreview) return demoApi(path, options);
@@ -493,11 +495,11 @@
     }
 
     function demoLoadDrafts() {
-      try { return JSON.parse(localStorage.getItem("socialSalesGithubPreviewDrafts") || "[]"); } catch { return []; }
+      return JSON.parse(JSON.stringify(staticPreviewData.drafts || []));
     }
 
     function demoSaveDrafts(items) {
-      localStorage.setItem("socialSalesGithubPreviewDrafts", JSON.stringify(items));
+      return items;
     }
 
     function demoTopicSuggestions(engine) {
@@ -613,22 +615,31 @@
       const body = requestBody(options);
       await new Promise((resolve) => setTimeout(resolve, 180));
       if (path === "/api/state") {
+        const syncedAt = staticPreviewData.synced_at ? ` · 동기화: ${staticPreviewData.synced_at}` : "";
         return {
           drafts: demoLoadDrafts(),
-          runs,
+          runs: staticPreviewData.runs || [],
           chrome_debug_ready: true,
-          ai_cli_status: "GitHub Pages 미리보기 · 실제 AI 생성은 http://127.0.0.1:8765 에서 실행",
+          ai_cli_status: `GitHub Pages 보기 전용 스냅샷${syncedAt}`,
           ai_cli_engines: { claude: false, codex: false }
         };
       }
       if (path === "/api/drafts") {
         const draft = ensureWorkflow(body);
-        const items = demoLoadDrafts();
-        const index = items.findIndex((item) => item.id === draft.id);
-        if (index >= 0) items[index] = draft;
-        else items.unshift(draft);
-        demoSaveDrafts(items.slice(0, 12));
         return { draft };
+      }
+      if (path === "/api/run") {
+        throw new Error("GitHub Pages는 보기 전용입니다. 입력/게시 작업은 로컬 http://127.0.0.1:8765 에서 실행하세요.");
+      }
+      if (
+        path === "/api/topic-suggestions" ||
+        path === "/api/topic-suggestions-compare" ||
+        path === "/api/master-draft" ||
+        path === "/api/master-draft-compare" ||
+        path === "/api/platform-drafts" ||
+        path === "/api/platform-drafts-compare"
+      ) {
+        throw new Error("GitHub Pages는 로컬에서 생성한 결과만 보여줍니다. 새 생성은 http://127.0.0.1:8765 에서 해주세요.");
       }
       if (path === "/api/topic-suggestions" || path === "/api/topic-suggestions-compare") {
         const candidates = {
@@ -759,7 +770,9 @@
 
     function imageSrc(path) {
       const fileName = String(path || "").split(/[\\/]/).pop();
-      return fileName ? `/assets/${encodeURIComponent(fileName)}` : "";
+      if (!fileName) return "";
+      const prefix = isStaticPreview ? "assets/" : "/assets/";
+      return `${prefix}${encodeURIComponent(fileName)}`;
     }
 
     function instagramImagePaths(item) {
@@ -969,6 +982,7 @@
       renderStep();
       renderFooter();
       renderRuns();
+      applyStaticPreviewMode();
     }
 
     function renderDraftList() {
@@ -996,8 +1010,12 @@
         .map((platform) => `<span class="chip">${escapeHtml(platformLabels[platform])}</span>`)
         .join("");
       $("busyNotice").textContent = busyMessage;
-      $("aiNotice").textContent = aiCliStatus ? `AI CLI: ${aiCliStatus}` : "";
-      $("chromeNotice").textContent = chromeDebugReady
+      $("aiNotice").textContent = isStaticPreview
+        ? (aiCliStatus || "GitHub Pages 보기 전용 스냅샷")
+        : (aiCliStatus ? `AI CLI: ${aiCliStatus}` : "");
+      $("chromeNotice").textContent = isStaticPreview
+        ? "새 생성/저장/입력/게시 없이 로컬에서 복사한 결과만 보여줍니다."
+        : chromeDebugReady
         ? ""
         : "Chrome 9222 창이 꺼져 있으면 최종 입력 버튼이 동작하지 않습니다.";
     }
@@ -1406,8 +1424,10 @@
     function renderFooter() {
       const step = currentStep();
       $("prevStepBtn").disabled = step === 1;
-      $("nextStepBtn").disabled = !canGoNext();
-      $("nextStepBtn").textContent = step === 1 ? "다음: 주제 추천"
+      $("nextStepBtn").disabled = isStaticPreview ? false : !canGoNext();
+      $("nextStepBtn").textContent = isStaticPreview
+        ? (step === 5 ? "처음 단계" : "다음 단계 보기")
+        : step === 1 ? "다음: 주제 추천"
         : step === 2 ? "다음: 주제 확정"
         : step === 3 ? "선택한 주제로 원고 작성"
         : step === 4 ? "플랫폼별 최종본 만들기"
@@ -1426,6 +1446,10 @@
 
     async function nextStep() {
       const step = currentStep();
+      if (isStaticPreview) {
+        setStep(step === 5 ? 1 : step + 1);
+        return;
+      }
       if (step === 1) {
         if (!currentDraft().topicSuggestions.length) await generateTopicsCompare();
         else setStep(2);
@@ -1623,6 +1647,7 @@
     }
 
     async function saveCurrent(silent = true) {
+      if (isStaticPreview) return;
       const draft = syncVariants(currentDraft());
       const result = await api("/api/drafts", { method: "POST", body: JSON.stringify(draft) });
       const index = drafts.findIndex((item) => item.id === result.draft.id);
@@ -1634,6 +1659,7 @@
     }
 
     function queueSave() {
+      if (isStaticPreview) return;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => saveCurrent(true).catch(console.error), 600);
     }
@@ -1649,6 +1675,38 @@
       selectedId = selectedId || drafts[0].id;
       activeFinalPlatform = currentDraft().selectedPlatforms[0] || "linkedin";
       render();
+    }
+
+    function applyStaticPreviewMode() {
+      if (!isStaticPreview) return;
+      const blockedButtons = [
+        "#newWorkflowBtn",
+        "#saveBtn",
+        "#regenerateTopicsBtn",
+        "#compareTopicsBtn",
+        "#manualTopicBtn",
+        "#writeMasterBtn",
+        "#compareMasterBtn",
+        "#saveMasterBtn",
+        "#makeFinalBtn",
+        "#makeFinalCompareBtn",
+        "[data-rewrite]",
+        "[data-platform-tool]",
+        "[data-use-topic-engine]",
+        "[data-use-master-engine]",
+        "[data-use-platform-engine]",
+        "[data-action='run']"
+      ].join(",");
+      document.querySelectorAll(blockedButtons).forEach((button) => {
+        button.disabled = true;
+        button.title = "GitHub Pages는 보기 전용입니다. 새 생성은 로컬 대시보드에서 해주세요.";
+      });
+      $("aiEngine").disabled = true;
+      document.querySelectorAll("#stage input, #stage textarea, #stage select").forEach((field) => {
+        if (field.type === "checkbox") field.disabled = true;
+        else field.readOnly = true;
+        field.title = "보기 전용 스냅샷입니다.";
+      });
     }
 
     async function refreshStatus() {
@@ -1694,7 +1752,7 @@
     });
 
     load();
-    setInterval(refreshStatus, 5000);
+    if (!isStaticPreview) setInterval(refreshStatus, 5000);
   </script>
 </body>
 </html>

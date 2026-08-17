@@ -14,8 +14,15 @@ if (-not (Test-Path -LiteralPath ".git")) {
   git branch -M $branch
 }
 
-git add index.html README.md .nojekyll publish_to_github_pages.ps1
-git commit -m "Publish social sales dashboard GitHub Pages preview" 2>$null
+$python = Get-Command python -ErrorAction SilentlyContinue
+if (-not $python) {
+  throw "Python을 찾지 못했습니다. 로컬 대시보드 스냅샷을 만들 수 없습니다."
+}
+
+python .\sync_local_to_pages.py
+
+git add index.html README.md .nojekyll publish_to_github_pages.ps1 sync_local_to_pages.py preview-data.js assets
+git commit -m "Publish local dashboard snapshot to GitHub Pages" 2>$null
 if ($LASTEXITCODE -ne 0) {
   Write-Host "No new commit was created. Continuing with existing files."
 }
