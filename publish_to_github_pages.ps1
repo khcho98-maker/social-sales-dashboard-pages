@@ -20,25 +20,29 @@ if ($LASTEXITCODE -ne 0) {
   Write-Host "No new commit was created. Continuing with existing files."
 }
 
+$owner = gh api user --jq ".login"
+$fullName = "$owner/$repoName"
+
 $repoExists = $false
 try {
-  gh repo view $repoName *> $null
+  gh repo view $fullName *> $null
   $repoExists = $true
 } catch {
   $repoExists = $false
 }
 
 if (-not $repoExists) {
-  gh repo create $repoName --public --source . --remote origin --push
-} else {
-  if (-not (git remote get-url origin 2>$null)) {
-    $owner = gh api user --jq ".login"
-    git remote add origin "https://github.com/$owner/$repoName.git"
-  }
-  git push -u origin $branch
+  gh repo create $fullName --public --description "Social sales dashboard GitHub Pages preview"
 }
 
-$fullName = gh repo view $repoName --json nameWithOwner --jq ".nameWithOwner"
+$remoteUrl = "https://github.com/$fullName.git"
+if (git remote get-url origin 2>$null) {
+  git remote set-url origin $remoteUrl
+} else {
+  git remote add origin $remoteUrl
+}
+
+git push -u origin $branch
 
 try {
   gh api -X POST "repos/$fullName/pages" -f "source[branch]=$branch" -f "source[path]=/" | Out-Null
