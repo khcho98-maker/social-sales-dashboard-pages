@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Social Sales Dashboard | 한길회계법인</title>
+  <meta name="description" content="한길회계법인 조경호 회계사의 AI 영업 콘텐츠 대시보드 공개 미리보기">
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --ink: #142033;
+      --muted: #5f6d80;
+      --panel: #ffffff;
+      --line: #d8e1ec;
+      --blue: #0a66c2;
+      --blue-soft: #e8f2ff;
+      --green: #13795b;
+      --shadow: 0 18px 48px rgba(20, 32, 51, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+      font-size: 22px;
+      line-height: 1.55;
+    }
+    header {
+      background: #162235;
+      color: #fff;
+      padding: 34px 44px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-weight: 800;
+      font-size: 30px;
+    }
+    .mark {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      background: var(--blue);
+      display: grid;
+      place-items: center;
+    }
+    main {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 48px 34px 80px;
+      display: grid;
+      gap: 34px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+      gap: 34px;
+      align-items: stretch;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 36px;
+      box-shadow: var(--shadow);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      font-size: 64px;
+      line-height: 1.08;
+      margin-bottom: 22px;
+    }
+    h2 {
+      font-size: 44px;
+      line-height: 1.16;
+      margin-bottom: 20px;
+    }
+    h3 { font-size: 32px; margin-bottom: 12px; }
+    .lead {
+      font-size: 28px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+    .pill-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: var(--blue-soft);
+      border: 1px solid #c7ddf7;
+      color: #074f99;
+      font-weight: 700;
+      font-size: 22px;
+    }
+    .screen {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .screen-top {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-height: 54px;
+      padding: 0 18px;
+      background: #172231;
+    }
+    .dot { width: 14px; height: 14px; border-radius: 50%; background: #90a4bd; }
+    .screen-body {
+      padding: 24px;
+      display: grid;
+      gap: 20px;
+    }
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    .step, .platform {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 16px;
+      font-weight: 800;
+      font-size: 22px;
+    }
+    .step.active, .platform.active {
+      border-color: var(--blue);
+      background: var(--blue-soft);
+    }
+    .platforms {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .platform { text-align: center; }
+    .content-preview {
+      min-height: 260px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 24px;
+      display: grid;
+      align-content: start;
+      gap: 18px;
+    }
+    .bar {
+      height: 22px;
+      border-radius: 999px;
+      background: #d8e7f8;
+    }
+    .bar.short { width: 62%; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+    }
+    ul {
+      margin: 0;
+      padding-left: 28px;
+    }
+    li { margin: 8px 0; }
+    .contact {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 24px;
+      align-items: center;
+    }
+    .logo-card {
+      min-height: 160px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      font-size: 68px;
+      font-weight: 900;
+    }
+    .small {
+      color: var(--muted);
+      font-size: 20px;
+    }
+    .callout {
+      border-left: 8px solid var(--green);
+      background: #f0fbf6;
+      padding: 26px 30px;
+      border-radius: 10px;
+    }
+    a { color: var(--blue); font-weight: 800; }
+    @media (max-width: 1100px) {
+      .hero, .grid, .contact { grid-template-columns: 1fr; }
+      .stepper, .platforms { grid-template-columns: 1fr; }
+      h1 { font-size: 48px; }
+      h2 { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="mark">S</div><div>Social Sales Dashboard</div></div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="panel">
+        <h1>회계감사 영업 콘텐츠를 한 번에 기획하고 검토합니다.</h1>
+        <p class="lead">LinkedIn, Threads, 네이버 블로그, Instagram용 초안을 플랫폼별로 나누고, Claude안과 GPT/Codex안을 비교해 선택하는 로컬 글쓰기 대시보드입니다.</p>
+        <div class="pill-row">
+          <span class="pill">Claude / GPT 비교</span>
+          <span class="pill">플랫폼별 초안</span>
+          <span class="pill">Instagram 캐러셀</span>
+          <span class="pill">사람이 최종 게시</span>
+        </div>
+      </div>
+      <div class="screen" aria-label="대시보드 미리보기">
+        <div class="screen-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="screen-body">
+          <div class="stepper">
+            <div class="step active">1 플랫폼</div>
+            <div class="step">2 주제</div>
+            <div class="step">3 확정</div>
+            <div class="step">4 원고</div>
+            <div class="step">5 최종</div>
+          </div>
+          <div class="platforms">
+            <div class="platform">LinkedIn</div>
+            <div class="platform active">Threads</div>
+            <div class="platform active">Naver</div>
+            <div class="platform active">Instagram</div>
+          </div>
+          <div class="content-preview">
+            <div class="bar"></div>
+            <div class="bar short"></div>
+            <div class="bar"></div>
+            <div class="bar short"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>무엇을 하나요</h2>
+        <ul>
+          <li>영업 주제 추천</li>
+          <li>공통 원고 작성</li>
+          <li>플랫폼별 최종본 변환</li>
+          <li>작성자 소개와 문의 정보 자동 반영</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>어디에 쓰나요</h2>
+        <ul>
+          <li>LinkedIn 전문가 관점 글</li>
+          <li>Threads 짧은 대화형 글</li>
+          <li>네이버 검색형 블로그 글</li>
+          <li>Instagram 2~5장 캐러셀</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>중요한 원칙</h2>
+        <ul>
+          <li>자동 게시하지 않습니다.</li>
+          <li>최종 게시 버튼은 사람이 누릅니다.</li>
+          <li>고객사례와 성과 수치는 만들지 않습니다.</li>
+          <li>회사 자료를 외부에 올리지 않습니다.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>GitHub Pages 공개 버전 안내</h2>
+      <div class="callout">
+        이 페이지는 외부에서 볼 수 있는 정적 미리보기입니다. 실제 로컬 대시보드는 Python 서버, Claude CLI, Codex CLI, Chrome CDP를 사용하므로 GitHub Pages에서 직접 실행되지 않습니다.
+      </div>
+    </section>
+
+    <section class="panel contact">
+      <div class="logo-card">H</div>
+      <div>
+        <h2>한길회계법인 조경호 공인회계사</h2>
+        <p>외부감사 · 회계감사 자동화 · 재무자료 분석 · 회계담당자 교육</p>
+        <p><strong>Mobile:</strong> 010-8930-9642<br>
+        <strong>E-mail:</strong> khcho@hangilac.co.kr<br>
+        <strong>Address:</strong> 서울시 강남구 선릉로 514, 성원타워 13층</p>
+        <p class="small">Public preview page for sharing the Social Sales Dashboard concept.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
